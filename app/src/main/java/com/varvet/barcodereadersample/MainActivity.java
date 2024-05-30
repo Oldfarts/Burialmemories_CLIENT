@@ -50,9 +50,6 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     WebView resultView;
-    RequestQueue requestQueue;
- //   ImageView imageView;
- //   VideoView videoView;
     Button scan_barcode_button;
     TextView result_textview;
 
@@ -60,7 +57,6 @@ public class MainActivity extends AppCompatActivity {
 //    private static int BARCODE_READER_REQUEST_CODE = 1;
     private final String BASE_URL = "http://192.168.1.209:4000/interface/";
     private String results = null;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,8 +67,6 @@ public class MainActivity extends AppCompatActivity {
         resultView = (WebView) findViewById(R.id.resultView);
         result_textview = (TextView) findViewById(R.id.result_textview);
         Button scanButton = (Button) findViewById(R.id.scan_barcode_button);
- //       imageView = (ImageView) findViewById(R.id.imageView);
- //       videoView = (VideoView) findViewById(R.id.videoView);
         scan_barcode_button = (Button) findViewById(R.id.scan_barcode_button);
 
 
@@ -95,33 +89,19 @@ public class MainActivity extends AppCompatActivity {
             if (resultCode == CommonStatusCodes.SUCCESS) {
                 if (data != null) {
                     Barcode barcode = data.getParcelableExtra(BarcodeCaptureActivity.BarcodeObject);
-                    //       val p = barcode.cornerPoints
                     result_textview.setText(barcode.displayValue.toString());
                     VolleyLog.d("Resultview", "Status: " + barcode.displayValue.toString());
                     results = barcode.displayValue.toString();
-
-                    // POST METHOD
-                    //requestQueue = Volley.newRequestQueue(getApplicationContext());
-                    //String results = "Jani Arvas";
 
                     HurlStack hurlStack = new HurlStack() {
                         @RequiresApi(api = Build.VERSION_CODES.O)
                         @Override
                         protected HttpURLConnection createConnection(URL url) throws IOException {
-                            HttpURLConnection httpsURLConnection = (HttpURLConnection) super.createConnection(url);
-                            try {
-                                //httpsURLConnection.setSSLSocketFactory(getSSLSocketFactory());
-                                //httpsURLConnection.setHostnameVerifier(getHostnameVerifier());
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            return httpsURLConnection;
+                            HttpURLConnection httpURLConnection = (HttpURLConnection) super.createConnection(url);
+                            return httpURLConnection;
                         }
                     };
 
-
-                    // Disable SSL certificate checking
-                    //disableSSLVerification();
                     final RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext(), hurlStack);
                     //requestQueue.add(request);
 
@@ -242,74 +222,29 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }
     }
-    public void parseResponseVideo(JSONObject response) {
-        Boolean bIsSuccess = false; // Write according to your logic this is demo.
-        JSONObject json=null;
-        try{
-            json = new JSONObject(response.toString());
-            Object result = json.get("data");
-            String image = result.toString();
-            String name = null;
-            byte[] decodedBytes = Base64.decode(image.getBytes(), Base64.DEFAULT);
-            try {
-                File newfile;
-                File filepath = new File(getApplicationContext().getFilesDir(), "BarcodeReaderSample" + File.separator + "videos");
-                File dir = new File(filepath.getAbsolutePath()  + "/");
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-                newfile = new File(dir, "save_" + System.currentTimeMillis() + ".mp4");
-                if (!newfile.exists()){
-                    newfile.createNewFile();
-                }
-                OutputStream out = new FileOutputStream(newfile);
-                name = newfile.toString();
-                out.write(decodedBytes);
-                out.close();
-            } catch (IOException e){
-                e.printStackTrace();
-            }
-            getWindow().setFormat(PixelFormat.TRANSLUCENT);
-            VideoView videoHolder = new VideoView(this);
-            videoHolder.setMediaController(new MediaController(this));
-            //videoView = (VideoView) findViewById(R.id.videoView);
-            //String UrlPath="android.resource://"+getPackageName()+"/raw/" + name;
-            //videoHolder.setVideoURI(Uri.parse("/sdcard/convertVideo.avi"));
-            videoHolder.setVideoURI(Uri.parse(name));
-            setContentView(videoHolder);
-            videoHolder.start();
-            //resultView.setText(result.toString());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        //Toast.makeText(VolleyMethods.this, "" + e.toString(), Toast.LENGTH_LONG).show(); // Test
-    }
 
+    /* parseResponseAllData(JSONOBject)
+    * parse data and create strings and create web site from them
+    */
     public void parseResponseAllData(JSONObject response) {
 
         JSONObject jsonString =null;
         JSONObject jsonVideo=null;
         JSONObject jsonImage=null;
         try{
+            // Parse data strings etc. name and text
             jsonString = new JSONObject((response.toString()));
             Object resultName = jsonString.get("name");
             Object resultText = jsonString.get("text");
+            Object resultExplanation = jsonString.get("explanation");
             //resultView.setBackgroundColor(Color.TRANSPARENT);
-//            result_textview.setText("Person:" + resultName.toString() + "\n" + "Text:" + resultText.toString() + "\n" + "Website:" + resultWebsite.toString());
 
             // Parse Image
             jsonImage = new JSONObject(response.toString());
             Object resultImage = jsonImage.get("image");
             String image = resultImage.toString();
-            Bitmap myBitmap = this.ConvertToImage(image);
+            //Bitmap myBitmap = this.ConvertToImage(image);
             String base64Image = image;
-
-            /*
-            imageView = (ImageView) findViewById(R.id.imageView);
-            imageView.setImageBitmap(myBitmap);
-            imageView.setBackgroundColor(Color.TRANSPARENT);
-            imageView.setVisibility(View.VISIBLE);
-            */
 
             // Parse video
             jsonVideo = new JSONObject(response.toString());
@@ -337,8 +272,7 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
             getWindow().setFormat(PixelFormat.TRANSLUCENT);
-            //videoView = (VideoView) findViewById(R.id.videoView);
-            //MediaController mc = new MediaController(this);
+
             WebSettings settings = resultView.getSettings();
             settings.setJavaScriptEnabled(true);
             settings.setDomStorageEnabled(true);
@@ -351,13 +285,13 @@ public class MainActivity extends AppCompatActivity {
                     + "<h1>Hi you! It's me Mario..</h1>\n"
                     + "<ul>"
                     + "<li>"
-                    + "Person:" + resultName.toString()
+                    + "Person:" + resultName
                     + "<br>"
                     + "<li>"
-                    + "Text:" + resultText.toString()
+                    + "Text:" + resultText
                     + "<br>"
                     + "<li>"
-                    //+ "Website:" + resultWebsite.toString()
+                    + "Explanation:" + resultExplanation
                     + "</ul>"
                     + "<img src=\"data:image/jpeg;base64," + base64Image + "\"" + "\"width=\"300\" height=\"300\" \" />"
                     + "<br>"
@@ -365,7 +299,7 @@ public class MainActivity extends AppCompatActivity {
                         "<source type=\"video/mp4\" src=\"data:video/webm;base64," + videoData + "\"width=\"300\" height=\"300\"" + "\">"
                     + "</video>"
                     + "</HTML>";
-            resultView.loadDataWithBaseURL(null, content, "text/html", "utf-8", null);
+            resultView.loadDataWithBaseURL(BASE_URL, content, "text/html", "utf-8", null);
             resultView.setVisibility(View.VISIBLE);
             resultView.reload();
 
