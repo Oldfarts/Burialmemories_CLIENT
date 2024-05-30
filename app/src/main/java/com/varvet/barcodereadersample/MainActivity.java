@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.Build;
@@ -49,8 +48,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.net.ssl.HttpsURLConnection;
-
 public class MainActivity extends AppCompatActivity {
     WebView resultView;
     RequestQueue requestQueue;
@@ -61,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static int BARCODE_READER_REQUEST_CODE = 2;
 //    private static int BARCODE_READER_REQUEST_CODE = 1;
-    private final String BASE_URL = "http://192.168.1.251:4000/interface/";
+    private final String BASE_URL = "http://192.168.1.209:4000/interface/";
     private String results = null;
 
 
@@ -104,18 +101,17 @@ public class MainActivity extends AppCompatActivity {
                     results = barcode.displayValue.toString();
 
                     // POST METHOD
-                    requestQueue = Volley.newRequestQueue(getApplicationContext());
-                    //results = "Jani Arvas";
+                    //requestQueue = Volley.newRequestQueue(getApplicationContext());
+                    //String results = "Jani Arvas";
 
                     HurlStack hurlStack = new HurlStack() {
                         @RequiresApi(api = Build.VERSION_CODES.O)
                         @Override
                         protected HttpURLConnection createConnection(URL url) throws IOException {
-                            HttpsURLConnection httpsURLConnection = (HttpsURLConnection) super.createConnection(url);
+                            HttpURLConnection httpsURLConnection = (HttpURLConnection) super.createConnection(url);
                             try {
-                                /*httpsURLConnection.setSSLSocketFactory(getSSLSocketFactory());
-                                httpsURLConnection.setHostnameVerifier(getHostnameVerifier());
-                                */
+                                //httpsURLConnection.setSSLSocketFactory(getSSLSocketFactory());
+                                //httpsURLConnection.setHostnameVerifier(getHostnameVerifier());
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -124,36 +120,19 @@ public class MainActivity extends AppCompatActivity {
                     };
 
 
-
                     // Disable SSL certificate checking
                     //disableSSLVerification();
-                    //final RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext(), hurlStack);
+                    final RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext(), hurlStack);
                     //requestQueue.add(request);
-                    // Instantiate the cache
-/*                    Cache cache = new DiskBasedCache(getCacheDir(), 1024 * 1024); // 1MB cap
 
-                    // Set up the network to use HttpURLConnection as the HTTP client.
-                    Network network = new BasicNetwork(new HurlStack());
-
-                    // Instantiate the RequestQueue with the cache and network.
-                    requestQueue = new RequestQueue(cache, network);
-*/
-
-                  JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, BASE_URL, addJsonParams(results),
-                          new Response.Listener<JSONObject>() {
+                    JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, BASE_URL, addJsonParams(results),new Response.Listener<JSONObject>() {
                         @Override
                         public void onResponse(JSONObject response) {
                             scan_barcode_button.setVisibility(View.INVISIBLE);
-                            //result_textview.setVisibility(View.INVISIBLE);
-                                 deleteCache(getApplicationContext());
-                                 parseResponseAllData(response);
+                                deleteCache(getApplicationContext());
+                                parseResponseAllData(response);
                             //Log.d("onResponse", response.toString());
                             //Toast.makeText(VolleyMethods.this, response.toString(), Toast.LENGTH_LONG).show(); // Test
-                            //result_textview.setText("");
-                            //result_textview.setText(response.toString());
-                            //parseResponseImage(response);
-                            //parseResponseVideo(response);
-                            //parseResponseAllData(response);
                         }
                     }, new Response.ErrorListener() {
                                 @Override
@@ -165,14 +144,50 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             }) {
 
+                        /**
+                         * Passing some request headers
+                         */
                         @Override
                         public Map<String, String> getHeaders() throws AuthFailureError {
                             HashMap<String, String> headers = new HashMap<String, String>();
                             headers.put("Content-Type", "application/json; charset=utf-8");
                             return headers;
                         }
+
+
                     };
+
                     requestQueue.add(jsonObjectRequest);
+
+                    // GET METHOD
+/*                   StringRequest request = new StringRequest(Request.Method.GET, BASE_URL, new Response.Listener<String>()   {
+                    @Override
+                    public void onResponse(String  response) {
+                        String temp=null;
+                        //Document document = Jsoup.parse(response);
+                        Document document = Jsoup.parseBodyFragment(response);
+                        Element body = document.body();
+                        Elements paragraphs = body.getElementsByTag("td");
+                        for (Element paragraph : paragraphs) {
+                            if(paragraph.text().contains("https://") ) {
+                                //System.out.println(paragraph.text());
+                                temp = temp + paragraph.text() + "\n";
+                            }
+                        }
+
+                           resultView.setText(temp);
+
+                        //resultView.setText(response);
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("error", error.toString());
+                    }
+                });
+                queue.add(request);*/
+
+
                 } //else
                     //resultView.setText(R.string.no_barcode_captured);
             }
@@ -218,31 +233,6 @@ public class MainActivity extends AppCompatActivity {
         return jsonobject;
     }
 
-/*    public void parseResponseImage(JSONObject response) {
-        Boolean bIsSuccess = false; // Write according to your logic this is demo.
-        JSONObject json=null;
-        try{
-             json = new JSONObject(response.toString());
-             //resultView.setText(json.toString());
-             resultView.loadDataWithBaseURL(null, json.toString(), "text/html", "utf-8", null);
-                //JSONObject jsonObject = new JSONObject(response.toString());
-            //bIsSuccess = jsonObject.getBoolean("success");
-
-            Object result = json.get("data");
-            String image = result.toString();
-            Bitmap myBitmap = this.ConvertToImage(image);
-            //Bitmap decodedByte = BitmapFactory.decodeByteArray(imageByteArray, 0, imageByteArray.length);
-            imageView = (ImageView) findViewById(R.id.imageView);
-            imageView.setImageBitmap(myBitmap);
-            imageView.setVisibility(View.VISIBLE);
-            //resultView.setText(result.toString());
-        } catch (JSONException e) {
-                e.printStackTrace();
-        }
-            //Toast.makeText(VolleyMethods.this, "" + e.toString(), Toast.LENGTH_LONG).show(); // Test
-    }
-
- */
     public Bitmap ConvertToImage(String image){
         try{
             InputStream stream = new ByteArrayInputStream(Base64.decode(image.getBytes(), Base64.DEFAULT));
@@ -297,22 +287,15 @@ public class MainActivity extends AppCompatActivity {
 
     public void parseResponseAllData(JSONObject response) {
 
-        JSONObject jsonName = null;
-        JSONObject jsonText = null;
-        JSONObject jsonExplanation = null;
+        JSONObject jsonString =null;
         JSONObject jsonVideo=null;
         JSONObject jsonImage=null;
-        //result_textview.setText("parse response all data!");
-
         try{
-            jsonName = new JSONObject((response.toString()));
-            Object resultName = jsonName.get("name");
-            jsonText = new JSONObject((response.toString()));
-            Object resultText = jsonText.get("text");
-            jsonExplanation = new JSONObject((response.toString()));
-            Object resultExplanation = jsonExplanation.get("explanation");
-            resultView.setBackgroundColor(Color.TRANSPARENT);
-            //result_textview.setText("Person:" + resultName.toString() + "\n" + "Text:" + resultText.toString() + "\n" + "Website:" + resultWebsite.toString());
+            jsonString = new JSONObject((response.toString()));
+            Object resultName = jsonString.get("name");
+            Object resultText = jsonString.get("text");
+            //resultView.setBackgroundColor(Color.TRANSPARENT);
+//            result_textview.setText("Person:" + resultName.toString() + "\n" + "Text:" + resultText.toString() + "\n" + "Website:" + resultWebsite.toString());
 
             // Parse Image
             jsonImage = new JSONObject(response.toString());
@@ -365,7 +348,7 @@ public class MainActivity extends AppCompatActivity {
 
             //Add data to output HTML
             String content = "<HTML>"
-                    + "<h1>It's me Mario..</h1>\n"
+                    + "<h1>Hi you! It's me Mario..</h1>\n"
                     + "<ul>"
                     + "<li>"
                     + "Person:" + resultName.toString()
@@ -374,7 +357,7 @@ public class MainActivity extends AppCompatActivity {
                     + "Text:" + resultText.toString()
                     + "<br>"
                     + "<li>"
-                    + "Explanation:" + resultExplanation.toString()
+                    //+ "Website:" + resultWebsite.toString()
                     + "</ul>"
                     + "<img src=\"data:image/jpeg;base64," + base64Image + "\"" + "\"width=\"300\" height=\"300\" \" />"
                     + "<br>"
@@ -388,7 +371,6 @@ public class MainActivity extends AppCompatActivity {
 
         } catch (JSONException e) {
             e.printStackTrace();
-            result_textview.setText("Exception: " + e.toString());
         }
         //Toast.makeText(VolleyMethods.this, "" + e.toString(), Toast.LENGTH_LONG).show(); // Test
     }
