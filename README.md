@@ -1,4 +1,4 @@
-#Project information: (android studio)
+# Project information: (android studio)
 #------------------------------------
 # Android Gradle plugin version = 8.4.1
 # Gradle version = 8.6
